@@ -32,6 +32,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
 async def matn_olish(update: Update, context: ContextTypes.DEFAULT_TYPE):
     kirilgan_matn = update.message.text  # Foydalanuvchi kiritgan matn
+    user = update.effective_user
+    user_name = user.username or user.first_name or "Foydalanuvchi"
     user_id = str(update.effective_user.id)
     try:
         if kirilgan_matn.isascii():
@@ -43,7 +45,7 @@ async def matn_olish(update: Update, context: ContextTypes.DEFAULT_TYPE):
             writer = csv.writer(f)
             writer.writerow([user_id, kirilgan_matn, javob, datetime.datetime.now().isoformat()])
         monospace_text = f'```\n{javob}\n```'  # Matnni Monospace formatida qayta ishlash
-        await update.message.reply_text(monospace_text, parse_mode='MarkdownV2') 
+        await update.message.reply_text(f"{user_name} siz kiritgan so'z:\n{monospace_text}", parse_mode='MarkdownV2') 
         await update.message.reply_text("Yana so'z kiring:")
     except Exception as e:
         logger.error(f"Xatolik: {e}")
