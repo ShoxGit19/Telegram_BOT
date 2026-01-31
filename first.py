@@ -28,7 +28,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             json.dump(users, f, indent=4)
     keyboard = [[InlineKeyboardButton("Kontaktni ulashish", request_contact=True)]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("Assalomu aleykom startni bosganingizdan hursandman!!\n Menga lotin yoki кирил so'zlarini yoki matnlarini kiritasiz\n Matn kiriting: ", reply_markup=reply_markup)
+    await update.message.reply_text("Assalomu aleykom! Bu bot lotin va kiril alifbolari o'rtasida matn transliteratsiyasini amalga oshiradi.\n\nMenga lotin yoki kiril so'zlarini yoki matnlarini kiritasiz. Matn kiriting:", reply_markup=reply_markup)
     
 async def matn_olish(update: Update, context: ContextTypes.DEFAULT_TYPE):
     kirilgan_matn = update.message.text  # Foydalanuvchi kiritgan matn
