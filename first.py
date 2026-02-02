@@ -16,13 +16,16 @@ ADMIN_ID = 6954909676
 # Start xabari
 START_MESSAGE = (
     "👋 Assalomu alaykum!\n\n"
-    "Bu bot Lotin ↔ Kiril transliteratsiya qiladi.\n\n"
-    "✍️ Matn yuboring — men darhol aylantirib beraman.\n\n"
-    "📌 Mavjud buyruqlar:\n"
-    "/help — Yordam\n"
-    "/history — Oxirgi tarjimalar\n"
-    "/feedback — Fikr bildirish\n"
+    "Bu Telegram bot lotin va kiril alifbolari o‘rtasida tezkor transliteratsiya qiladi.\n\n"
+    "✍️ Istalgan matn yuboring — bot avtomatik tarzda aylantirib beradi.\n\n"
+    "📌 Imkoniyatlar:\n"
+    "• Lotin ↔ Kiril tarjima\n"
+    "• /history — oxirgi yuborgan tarjimalaringizni ko‘rish\n"
+    "• /feedback — bot haqida fikr yoki taklif yuborish\n"
+    "• Tezkor va bepul foydalanish\n\n"
+    "🚀 Dasturchi: @gaybullayeev19"
 )
+
 
 # Helper functions
 def remove_emojis(text):
