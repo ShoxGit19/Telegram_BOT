@@ -5,6 +5,7 @@ import csv
 import io
 import os
 import re
+import asyncio  # ✅ Qo‘shildi
 
 from transliterate import to_cyrillic, to_latin
 from telegram import Update
@@ -26,6 +27,20 @@ START_MESSAGE = (
     "🚀 Dasturchi: @gaybullayeev19"
 )
 
+# ✅ Qo‘shildi: Ramazon broadcast xabari (HTML)
+RAMAZON_MESSAGE = (
+    "🌙 <b>Ramazon muborak!</b>\n\n"
+    "Ramazoningiz barakali o‘tsin. 🤲\n"
+    "Ibodatlarni qiynalmay ado etish nasib qilsin.\n"
+    "Duolaringiz ijobat bo‘lsin! ✨\n\n"
+    "Ramazon sabab ishlarimiz yanada rejali va intizomli bo‘lsin.\n\n"
+    "🕌 <b>Ayyom muborak!</b>"
+)
+
+# ✅ Qo‘shildi: bir marta yuborilgani uchun flag
+SENT_FLAGS_FILE = "data/sent_flags.json"
+RAMAZON_FLAG_KEY = "ramazon_broadcast_sent_v1"
+
 
 # Helper functions
 def remove_emojis(text):
@@ -43,6 +58,68 @@ def contains_cyrillic(text):
     """
     clean = remove_emojis(text)
     return bool(re.search('[А-Яа-яЁё]', clean))
+
+
+# ✅ Qo‘shildi: flaglarni yuklash/saqlash
+def load_sent_flags():
+    os.makedirs("data", exist_ok=True)
+    if not os.path.exists(SENT_FLAGS_FILE):
+        return {}
+    try:
+        with open(SENT_FLAGS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def save_sent_flags(flags: dict):
+    os.makedirs("data", exist_ok=True)
+    with open(SENT_FLAGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(flags, f, indent=4, ensure_ascii=False)
+
+
+# ✅ Qo‘shildi: bot ishga tushganda hamma eski userlarga yuborish
+async def broadcast_ramazon_to_all_users(context: ContextTypes.DEFAULT_TYPE):
+    """
+    Bot ishga tushganda users.json dagi hamma userlarga Ramazon xabarini yuboradi.
+    Takror yubormaslik uchun data/sent_flags.json da flag saqlaydi.
+    """
+    flags = load_sent_flags()
+    if flags.get(RAMAZON_FLAG_KEY) is True:
+        return  # avval yuborilgan bo'lsa, qayta yubormaydi
+
+    # users.json o'qish
+    try:
+        with open("users.json", "r", encoding="utf-8") as f:
+            users = json.load(f)
+    except FileNotFoundError:
+        users = {}
+    except Exception as e:
+        logger.error(f"users.json o'qishda xatolik: {e}")
+        users = {}
+
+    if not users:
+        flags[RAMAZON_FLAG_KEY] = True
+        save_sent_flags(flags)
+        return
+
+    success, failed = 0, 0
+    for uid in users.keys():
+        try:
+            await context.bot.send_message(
+                chat_id=int(uid),
+                text=RAMAZON_MESSAGE,
+                parse_mode="HTML"
+            )
+            success += 1
+            await asyncio.sleep(0.05)  # flood limitdan saqlanish uchun
+        except Exception as e:
+            failed += 1
+            logger.warning(f"Broadcast yuborilmadi uid={uid}, xatolik={e}")
+
+    flags[RAMAZON_FLAG_KEY] = True
+    save_sent_flags(flags)
+
+    logger.info(f"Ramazon broadcast yakunlandi. success={success}, failed={failed}")
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -315,6 +392,7 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Stats xatolik: {e}")
         await update.message.reply_text("Statistikani olishda xatolik yuz berdi.")
 
+
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
     logger = logging.getLogger("dastur_loglari")
@@ -329,6 +407,8 @@ if __name__ == '__main__':
 
     app = ApplicationBuilder().token(token).build()
 
+    # ✅ Qo‘shildi: bot ishga tushganda 5 soniyadan keyin broadcast (faqat 1 marta)
+    
     # Commandlar
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
