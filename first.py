@@ -40,6 +40,13 @@ RAMAZON_MESSAGE = (
 # ✅ Qo‘shildi: bir marta yuborilgani uchun flag
 SENT_FLAGS_FILE = "data/sent_flags.json"
 RAMAZON_FLAG_KEY = "ramazon_broadcast_sent_v1"
+def git_auto_push():
+    try:
+        subprocess.run(["git", "add", "."], check=True)
+        subprocess.run(["git", "commit", "-m", "Auto update data"], check=True)
+        subprocess.run(["git", "push"], check=True)
+    except Exception as e:
+        logger.error(f"Git push xatolik: {e}")
 
 
 # Helper functions
