@@ -6,7 +6,7 @@ import io
 import os
 import re
 import asyncio  # ✅ Qo‘shildi
-
+import subprocess  # ✅ Qo‘shildi: git auto push uchun
 from transliterate import to_cyrillic, to_latin
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
