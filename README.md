@@ -1,34 +1,75 @@
 # Telegram Transliteration Bot
 
-Bu bot lotin va kiril alifbolari o'rtasida matn transliteratsiyasini amalga oshiradi.
+Bu Telegram bot o‘zbek lotin va kiril alifbolari o‘rtasida tezkor va avtomatik transliteratsiya amalga oshiradi. Foydalanuvchi yuborgan matn bir zumda boshqa yozuv tizimiga aylantiriladi.
 
-## Xususiyatlar
-- /start: Botni ishga tushirish
-- Matn yuborish: Lotin -> Kiril yoki Kiril -> Lotin
-- /help: Yordam
-- /export: Foydalanuvchilar ro'yxatini CSV sifatida yuklab olish (faqat admin)
-- Kontakt ulashish: Telefon raqamini saqlash
+---
 
-## O'rnatish
-1. Python 3.7+ o'rnating.
-2. Kerakli paketlarni o'rnating:
-   ```
+## Asosiy imkoniyatlar
+
+- Lotin → Kiril o‘girish
+- Kiril → Lotin o‘girish
+- Matnni avtomatik aniqlash va mos yozuvga aylantirish
+- Foydalanuvchilar ma’lumotlarini saqlash
+- Tarjima tarixini CSV formatda yozib borish
+- Telefon raqamni qabul qilish va saqlash
+- Real vaqt rejimida ishlash
+
+---
+
+## Texnologiyalar
+
+- Python 3.7+
+- python-telegram-bot
+- transliterate
+- JSON va CSV orqali ma’lumot saqlash
+
+---
+
+## O‘rnatish
+
+1. Python 3.7 yoki undan yuqori versiyasini o‘rnating.
+
+2. Repository’ni yuklab oling:
+
+   git clone https://github.com/ShoxGit19/Telegram_BOT.git
+   cd Telegram_BOT
+
+3. Virtual environment yaratish tavsiya etiladi:
+
+   python3 -m venv .venv
+   source .venv/bin/activate
+
+4. Kerakli paketlarni o‘rnating:
+
    pip install python-telegram-bot transliterate
-   ```
-3. `token.txt` faylini yarating va bot tokenini qo'ying.
-4. `users.json` va `translations.csv` fayllarini yarating (bo'sh).
+
+5. token.txt fayl yarating va ichiga bot tokenini yozing.
+
+6. Quyidagi fayllar mavjudligiga ishonch hosil qiling (bo‘sh bo‘lishi mumkin):
+   - users.json
+   - translations.csv
+
+---
 
 ## Ishga tushirish
-```
-cd Telegram_BOT
-python first.py
-```
 
-## Fayllar
-- `first.py`: Asosiy bot kodi
-- `token.txt`: Bot tokeni
-- `users.json`: Foydalanuvchilar ma'lumotlari
-- `translations.csv`: Transliteratsiya loglari
+   python3 first.py
 
-## Admin
-/export uchun admin ID ni kodda o'zgartiring.
+Bot ishga tushgandan so‘ng Telegram orqali foydalanish mumkin bo‘ladi.
+
+---
+
+## Loyihaning tuzilishi
+
+- first.py — asosiy bot kodi
+- transliterate.py — transliteratsiya logikasi
+- token.txt — bot tokeni
+- users.json — foydalanuvchilar ma’lumotlari
+- translations.csv — tarjimalar logi
+- feedbacks.csv — foydalanuvchi xabarlari
+
+---
+
+## Ishlash printsipi
+
+Bot foydalanuvchi yuborgan matndagi yozuv tizimini avtomatik aniqlaydi va uni boshqa alifboga o‘giradi. Barcha transliteratsiyalar log sifatida saqlanadi. Ma’lumotlar JSON va CSV fayllarda lokal tarzda saqlanadi.
