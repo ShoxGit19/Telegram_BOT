@@ -1,8 +1,15 @@
 #!/bin/bash
 
-cd /home/ec2-user/Telegram_BOT
+cd /home/ec2-user/Telegram_BOT || exit
 
-git pull --rebase
+# O'zgarishlarni olish
+git pull origin main --rebase
+
+# Add
 git add .
-git commit -m "Auto save" || true
-git push
+
+# Agar o'zgarish bo'lsa commit qiladi
+git diff --cached --quiet || git commit -m "Auto save $(date)"
+
+# Push
+git push origin main
