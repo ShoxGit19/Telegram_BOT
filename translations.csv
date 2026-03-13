@@ -4229,3 +4229,589 @@ Wорд файл структурасида тўлиқ саҳифаланган 
 Университет номини ёзиб беринг — титул варақни айнан сизнинг ОТМ номи билан тўлиқ расмийлаштириб бераман.
 wорд файл тструктурасси керак
 Қуйида сизга Юридик факультет талаблари асосида Wорд файлнинг тўлиқ структураси (тайёр шаблон кўринишида) берилади. Шуни Wорд’га кўчириб, кўрсатилган форматлаш қоидаларини қўлласангиз, БМИ тўлиқ стандартга мос бўлади.",2026-03-13T05:29:46.849693
+5316984663,"WORD FAYL STRUKTURASI (BMI UCHUN)
+
+1️⃣ SAHIFA SOZLAMALARI (Page Setup)
+Layout → Margins → Custom Margins:
+Left (chap): 3 sm
+Right (o‘ng): 1,5 sm
+Top (yuqori): 2 sm
+Bottom (past): 2 sm
+Orientation: Portrait
+Paper size: A4
+
+2️⃣ SHRIFT VA INTERVAL
+Shrift: Times New Roman
+O‘lcham: 14
+Interval: 1,5
+Alignment: Justify
+Paragraph indent (abzas): 1,25 sm
+
+🧾 HUJJAT TUZILMASI
+
+1. TITUL VARAG‘I (1-sahifa, raqam qo‘yilmaydi)
+(O‘rtaga tekislangan)
+O‘ZBEKISTON RESPUBLIKASI
+OLIY TA’LIM, FAN VA INNOVATSIYALAR VAZIRLIGI
+____ UNIVERSITETI
+YURIDIK FAKULTETI
+BITIRUV MALAKAVIY ISHI
+Mavzu:
+JINOYAT PROTSESSIDА DALILLARNI TO‘PLASH USULLARINI TAKOMILLASHTIRISH
+Bajardi: ______
+Ilmiy rahbar: ______
+Kafedra: Jinoyat huquqi va protsessi
+Toshkent – 2026
+
+2. MUNDARIJA (2-sahifa)
+Word’da avtomatik qilish tartibi:
+Barcha bob nomlariga Heading 1
+Paragraflarga Heading 2
+References → Table of Contents → Automatic
+Namuna:
+KIRISH ............................................... 3
+I BOB ............................................... 7
+1.1. ............................................... 9
+1.2. ............................................... 15
+II BOB .............................................. 25
+III BOB ............................................. 45
+XULOSA ............................................. 70
+FOYDALANILGAN ADABIYOTLAR ................. 74
+ILOVALAR ............................................ 78
+
+3. KIRISH (3–6 bet)
+Heading 1
+KIRISH
+Tarkibi:
+Mavzuning dolzarbligi
+Tadqiqot maqsadi
+Vazifalari
+Ob’ekt va predmet
+Metodlari
+Ilmiy yangilik
+Amaliy ahamiyati
+Ishning tuzilishi
+
+4. ASOSIY QISM
+
+I BOB
+(Heading 1, BOSH HARFLAR BILAN)
+I BOB. JINOYAT PROTSESSIDА DALIL INSTITUTINING NAZARIY ASOSLARI
+1.1. Dalil tushunchasi va belgilari
+(Heading 2)
+Matn…
+1.2. Isbotlash predmeti
+(Heading 2)
+Matn…
+1.3. Dalillarni baholash
+(Heading 2)
+Matn…
+
+II BOB
+(Heading 1)
+II BOB. DALILLARNI TO‘PLASHNING AMALDAGI TARTIBI VA MUAMMOLARI
+2.1. Tergov harakatlari
+2.2. Tezkor-qidiruv tadbirlari
+2.3. Raqamli dalillar
+2.4. Sud amaliyoti
+
+III BOB
+(Heading 1)
+III BOB. DALILLARNI TO‘PLASH USULLARINI TAKOMILLASHTIRISH
+3.1. Qonunchilikni takomillashtirish
+3.2. Texnologik modernizatsiya
+3.3. Inson huquqlari kafolatlari
+3.4. Xorijiy tajriba
+
+5. XULOSA (3–5 bet)
+Heading 1
+XULOSA
+Raqamlanmagan umumiy xulosalar (1., 2., 3., 4.)
+
+6. FOYDALANILGAN ADABIYOTLAR
+Heading 1
+FOYDALANILGAN ADABIYOTLAR
+Tartib:
+I. Normativ-huquqiy hujjatlar
+II. Ilmiy adabiyotlar
+III. Internet manbalar
+Raqam bilan ketma-ket yoziladi.
+
+7. ILOVALAR
+Heading 1
+ILOVALAR
+1-ilova. Dalillarni to‘plash sxemasi
+2-ilova. Statistik jadval
+3-ilova. Algoritm
+
+🔢 SAHIFA RAQAMLASH
+Insert → Page Number → Bottom Center
+⚠ Titul varaqda raqam ko‘rinmaydi
+⚠ Raqamlash Kirishdan boshlanadi
+
+📊 JADVAL VA RASMLAR RASMIYLASHTIRISH
+Jadval 1
+Jadval 2
+Rasm 1
+Rasm 2
+Nomlari pastki qismida yoziladi.
+
+📌 HAJMI
+To‘liq rasmiylashtirilganda:
+Kirish – 5 bet
+I bob – 20 bet
+II bob – 25 bet
+III bob – 20 bet
+Xulosa – 5 bet
+Adabiyotlar – 3 bet
+Ilovalar – 5 bet
+Umumiy: 75–85 bet
+
+Agar xohlasangiz, men sizga:
+✅ Tayyor .docx struktura matnini ko‘chirishga tayyor holatda
+✅ Avtomatik mundarijali format
+✅ Sahifalangan variant
+✅ To‘liq 80 betlik to‘ldirilgan matn bilan variant
+ham yozib beraman.
+Qaysi variant kerak:
+Faqat bo‘sh struktura
+To‘liq to‘ldirilgan 80 betlik Word mat","WORD FAYL STRUKTURASI (BMI UCHUN)
+
+1️⃣ SAHIFA SOZLAMALARI (Page Setup)
+Layout → Margins → Custom Margins:
+Left (chap): 3 sm
+Right (o‘ng): 1,5 sm
+Top (yuqori): 2 sm
+Bottom (past): 2 sm
+Orientation: Portrait
+Paper size: A4
+
+2️⃣ SHRIFT VA INTERVAL
+Shrift: Times New Roman
+O‘lcham: 14
+Interval: 1,5
+Alignment: Justify
+Paragraph indent (abzas): 1,25 sm
+
+🧾 HUJJAT TUZILMASI
+
+1. TITUL VARAG‘I (1-sahifa, raqam qo‘yilmaydi)
+(O‘rtaga tekislangan)
+O‘ZBEKISTON RESPUBLIKASI
+OLIY TA’LIM, FAN VA INNOVATSIYALAR VAZIRLIGI
+____ UNIVERSITETI
+YURIDIK FAKULTETI
+BITIRUV MALAKAVIY ISHI
+Mavzu:
+JINOYAT PROTSESSIDA DALILLARNI TO‘PLASH USULLARINI TAKOMILLASHTIRISH
+Bajardi: ______
+Ilmiy rahbar: ______
+Kafedra: Jinoyat huquqi va protsessi
+Toshkent – 2026
+
+2. MUNDARIJA (2-sahifa)
+Word’da avtomatik qilish tartibi:
+Barcha bob nomlariga Heading 1
+Paragraflarga Heading 2
+References → Table of Contents → Automatic
+Namuna:
+KIRISH ............................................... 3
+I BOB ............................................... 7
+1.1. ............................................... 9
+1.2. ............................................... 15
+II BOB .............................................. 25
+III BOB ............................................. 45
+XULOSA ............................................. 70
+FOYDALANILGAN ADABIYOTLAR ................. 74
+ILOVALAR ............................................ 78
+
+3. KIRISH (3–6 bet)
+Heading 1
+KIRISH
+Tarkibi:
+Mavzuning dolzarbligi
+Tadqiqot maqsadi
+Vazifalari
+Ob’ekt va predmet
+Metodlari
+Ilmiy yangilik
+Amaliy ahamiyati
+Ishning tuzilishi
+
+4. ASOSIY QISM
+
+I BOB
+(Heading 1, BOSH HARFLAR BILAN)
+I BOB. JINOYAT PROTSESSIDA DALIL INSTITUTINING NAZARIY ASOSLARI
+1.1. Dalil tushunchasi va belgilari
+(Heading 2)
+Matn…
+1.2. Isbotlash predmeti
+(Heading 2)
+Matn…
+1.3. Dalillarni baholash
+(Heading 2)
+Matn…
+
+II BOB
+(Heading 1)
+II BOB. DALILLARNI TO‘PLASHNING AMALDAGI TARTIBI VA MUAMMOLARI
+2.1. Tergov harakatlari
+2.2. Tezkor-qidiruv tadbirlari
+2.3. Raqamli dalillar
+2.4. Sud amaliyoti
+
+III BOB
+(Heading 1)
+III BOB. DALILLARNI TO‘PLASH USULLARINI TAKOMILLASHTIRISH
+3.1. Qonunchilikni takomillashtirish
+3.2. Texnologik modernizatsiya
+3.3. Inson huquqlari kafolatlari
+3.4. Xorijiy tajriba
+
+5. XULOSA (3–5 bet)
+Heading 1
+XULOSA
+Raqamlanmagan umumiy xulosalar (1., 2., 3., 4.)
+
+6. FOYDALANILGAN ADABIYOTLAR
+Heading 1
+FOYDALANILGAN ADABIYOTLAR
+Tartib:
+I. Normativ-huquqiy hujjatlar
+II. Ilmiy adabiyotlar
+III. Internet manbalar
+Raqam bilan ketma-ket yoziladi.
+
+7. ILOVALAR
+Heading 1
+ILOVALAR
+1-ilova. Dalillarni to‘plash sxemasi
+2-ilova. Statistik jadval
+3-ilova. Algoritm
+
+🔢 SAHIFA RAQAMLASH
+Insert → Page Number → Bottom Center
+⚠ Titul varaqda raqam ko‘rinmaydi
+⚠ Raqamlash Kirishdan boshlanadi
+
+📊 JADVAL VA RASMLAR RASMIYLASHTIRISH
+Jadval 1
+Jadval 2
+Rasm 1
+Rasm 2
+Nomlari pastki qismida yoziladi.
+
+📌 HAJMI
+To‘liq rasmiylashtirilganda:
+Kirish – 5 bet
+I bob – 20 bet
+II bob – 25 bet
+III bob – 20 bet
+Xulosa – 5 bet
+Adabiyotlar – 3 bet
+Ilovalar – 5 bet
+Umumiy: 75–85 bet
+
+Agar xohlasangiz, men sizga:
+✅ Tayyor .docx struktura matnini ko‘chirishga tayyor holatda
+✅ Avtomatik mundarijali format
+✅ Sahifalangan variant
+✅ To‘liq 80 betlik to‘ldirilgan matn bilan variant
+ham yozib beraman.
+Qaysi variant kerak:
+Faqat bo‘sh struktura
+To‘liq to‘ldirilgan 80 betlik Word mat",2026-03-13T05:30:55.999960
+5316984663,"WORD FAYL STRUKTURASI (BMI UCHUN)
+
+1️⃣ SAHIFA SOZLAMALARI (Page Setup)
+Layout → Margins → Custom Margins:
+Left (chap): 3 sm
+Right (o‘ng): 1,5 sm
+Top (yuqori): 2 sm
+Bottom (past): 2 sm
+Orientation: Portrait
+Paper size: A4
+
+2️⃣ SHRIFT VA INTERVAL
+Shrift: Times New Roman
+O‘lcham: 14
+Interval: 1,5
+Alignment: Justify
+Paragraph indent (abzas): 1,25 sm
+
+🧾 HUJJAT TUZILMASI
+
+1. TITUL VARAG‘I (1-sahifa, raqam qo‘yilmaydi)
+(O‘rtaga tekislangan)
+O‘ZBEKISTON RESPUBLIKASI
+OLIY TA’LIM, FAN VA INNOVATSIYALAR VAZIRLIGI
+____ UNIVERSITETI
+YURIDIK FAKULTETI
+BITIRUV MALAKAVIY ISHI
+Mavzu:
+JINOYAT PROTSESSIDA DALILLARNI TO‘PLASH USULLARINI TAKOMILLASHTIRISH
+Bajardi: __
+Ilmiy rahbar: __
+Kafedra: Jinoyat huquqi va protsessi
+Toshkent – 2026
+
+2. MUNDARIJA (2-sahifa)
+Word’da avtomatik qilish tartibi:
+Barcha bob nomlariga Heading 1
+Paragraflarga Heading 2
+References → Table of Contents → Automatic
+Namuna:
+KIRISH ............................................... 3
+I BOB ............................................... 7
+1.1. ............................................... 9
+1.2. ............................................... 15
+II BOB .............................................. 25
+III BOB ............................................. 45
+XULOSA ............................................. 70
+FOYDALANILGAN ADABIYOTLAR ................. 74
+ILOVALAR ............................................ 78
+
+3. KIRISH (3–6 bet)
+Heading 1
+KIRISH
+Tarkibi:
+Mavzuning dolzarbligi
+Tadqiqot maqsadi
+Vazifalari
+Ob’ekt va predmet
+Metodlari
+Ilmiy yangilik
+Amaliy ahamiyati
+Ishning tuzilishi
+
+4. ASOSIY QISM
+
+I BOB
+(Heading 1, BOSH HARFLAR BILAN)
+I BOB. JINOYAT PROTSESSIDA DALIL INSTITUTINING NAZARIY ASOSLARI
+1.1. Dalil tushunchasi va belgilari
+(Heading 2)
+Matn…
+1.2. Isbotlash predmeti
+(Heading 2)
+Matn…
+1.3. Dalillarni baholash
+(Heading 2)
+Matn…
+
+II BOB
+(Heading 1)
+II BOB. DALILLARNI TO‘PLASHNING AMALDAGI TARTIBI VA MUAMMOLARI
+2.1. Tergov harakatlari
+2.2. Tezkor-qidiruv tadbirlari
+2.3. Raqamli dalillar
+2.4. Sud amaliyoti
+
+III BOB
+(Heading 1)
+III BOB. DALILLARNI TO‘PLASH USULLARINI TAKOMILLASHTIRISH
+3.1. Qonunchilikni takomillashtirish
+3.2. Texnologik modernizatsiya
+3.3. Inson huquqlari kafolatlari
+3.4. Xorijiy tajriba
+
+5. XULOSA (3–5 bet)
+Heading 1
+XULOSA
+Raqamlanmagan umumiy xulosalar (1., 2., 3., 4.)
+
+6. FOYDALANILGAN ADABIYOTLAR
+Heading 1
+FOYDALANILGAN ADABIYOTLAR
+Tartib:
+I. Normativ-huquqiy hujjatlar
+II. Ilmiy adabiyotlar
+III. Internet manbalar
+Raqam bilan ketma-ket yoziladi.
+
+7. ILOVALAR
+Heading 1
+ILOVALAR
+1-ilova. Dalillarni to‘plash sxemasi
+2-ilova. Statistik jadval
+3-ilova. Algoritm
+
+🔢 SAHIFA RAQAMLASH
+Insert → Page Number → Bottom Center
+⚠ Titul varaqda raqam ko‘rinmaydi
+⚠ Raqamlash Kirishdan boshlanadi
+
+📊 JADVAL VA RASMLAR RASMIYLASHTIRISH
+Jadval 1
+Jadval 2
+Rasm 1
+Rasm 2
+Nomlari pastki qismida yoziladi.
+
+📌 HAJMI
+To‘liq rasmiylashtirilganda:
+Kirish – 5 bet
+I bob – 20 bet
+II bob – 25 bet
+III bob – 20 bet
+Xulosa – 5 bet
+Adabiyotlar – 3 bet
+Ilovalar – 5 bet
+Umumiy: 75–85 bet
+
+Agar xohlasangiz, men sizga:
+✅ Tayyor .docx struktura matnini ko‘chirishga tayyor holatda
+✅ Avtomatik mundarijali format
+✅ Sahifalangan variant
+✅ To‘liq 80 betlik to‘ldirilgan matn bilan variant
+ham yozib beraman.
+Qaysi variant kerak:
+Faqat bo‘sh struktura
+To‘liq to‘ldirilgan 80 betlik Word mat","WОРД ФАЙЛ СТРУКТУРАСИ (БМИ УЧУН)
+
+1️⃣ САҲИФА СОЗЛАМАЛАРИ (Паге Сетуп)
+Лаёут → Маргинс → Cустом Маргинс:
+Лефт (чап): 3 см
+Ригҳт (ўнг): 1,5 см
+Топ (юқори): 2 см
+Боттом (паст): 2 см
+Ориэнтатион: Портраит
+Папер сизе: А4
+
+2️⃣ ШРИФТ ВА ИНТЕРВАЛ
+Шрифт: Тимес Неw Роман
+Ўлчам: 14
+Интервал: 1,5
+Алигнмент: Жустифй
+Параграпҳ индент (абзас): 1,25 см
+
+🧾 ҲУЖЖАТ ТУЗИЛМАСИ
+
+1. ТИТУЛ ВАРАҒИ (1-саҳифа, рақам қўйилмайди)
+(Ўртага текисланган)
+ЎЗБЕКИСТОН РЕСПУБЛИКАСИ
+ОЛИЙ ТА’ЛИМ, ФАН ВА ИННОВАТСИЯЛАР ВАЗИРЛИГИ
+____ УНИВЕРСИТЕТИ
+ЮРИДИК ФАКУЛТЕТИ
+БИТИРУВ МАЛАКАВИЙ ИШИ
+Мавзу:
+ЖИНОЯТ ПРОТСЕССИДА ДАЛИЛЛАРНИ ТЎПЛАШ УСУЛЛАРИНИ ТАКОМИЛЛАШТИРИШ
+Бажарди: __
+Илмий раҳбар: __
+Кафедра: Жиноят ҳуқуқи ва протсессци
+Тошкент – 2026
+
+2. МУНДАРИЖА (2-саҳифа)
+Wорд’да автоматик қилиш тартиби:
+Барча боб номларига Ҳеадинг 1
+Параграфларга Ҳеадинг 2
+Референcес → Табле оф Cонтентс → Аутоматиc
+Намуна:
+КИРИШ ............................................... 3
+И БОБ ............................................... 7
+1.1. ............................................... 9
+1.2. ............................................... 15
+ИИ БОБ .............................................. 25
+ИИИ БОБ ............................................. 45
+ХУЛОСА ............................................. 70
+ФОЙДАЛАНИЛГАН АДАБИЁТЛАР ................. 74
+ИЛОВАЛАР ............................................ 78
+
+3. КИРИШ (3–6 бет)
+Ҳеадинг 1
+КИРИШ
+Таркиби:
+Мавзунинг долзарблиги
+Тадқиқот мақсади
+Вазифалари
+Об’экт ва предмет
+Методлари
+Илмий янгилик
+Амалий аҳамияти
+Ишнинг тузилиши
+
+4. АСОСИЙ ҚИСМ
+
+И БОБ
+(Ҳеадинг 1, БОШ ҲАРФЛАР БИЛАН)
+И БОБ. ЖИНОЯТ ПРОТСЕССИДА ДАЛИЛ ИНСТИТУТИНИНГ НАЗАРИЙ АСОСЛАРИ
+1.1. Далил тушьунчаси ва белгилари
+(Ҳеадинг 2)
+Матн…
+1.2. Исботлаш предмети
+(Ҳеадинг 2)
+Матн…
+1.3. Далилларни баҳолаш
+(Ҳеадинг 2)
+Матн…
+
+ИИ БОБ
+(Ҳеадинг 1)
+ИИ БОБ. ДАЛИЛЛАРНИ ТЎПЛАШНИНГ АМАЛДАГИ ТАРТИБИ ВА МУАММОЛАРИ
+2.1. Тергов ҳаракатлари
+2.2. Тезкор-қидирув тадбирлари
+2.3. Рақамли далиллар
+2.4. Суд амалиёти
+
+ИИИ БОБ
+(Ҳеадинг 1)
+ИИИ БОБ. ДАЛИЛЛАРНИ ТЎПЛАШ УСУЛЛАРИНИ ТАКОМИЛЛАШТИРИШ
+3.1. Қонунчиликни такомиллаштириш
+3.2. Технологик модернизатсияц
+3.3. Инсон ҳуқуқлари кафолатлари
+3.4. Хорижий тажриба
+
+5. ХУЛОСА (3–5 бет)
+Ҳеадинг 1
+ХУЛОСА
+Рақамланмаган умумий хулосалар (1., 2., 3., 4.)
+
+6. ФОЙДАЛАНИЛГАН АДАБИЁТЛАР
+Ҳеадинг 1
+ФОЙДАЛАНИЛГАН АДАБИЁТЛАР
+Тартиб:
+И. Норматив-ҳуқуқий ҳужжатлар
+ИИ. Илмий адабиётлар
+ИИИ. Интернет манбалар
+Рақам билан кетма-кет ёзилади.
+
+7. ИЛОВАЛАР
+Ҳеадинг 1
+ИЛОВАЛАР
+1-илова. Далилларни тўплаш схемаси
+2-илова. Статистик жадвал
+3-илова. Алгоритм
+
+🔢 САҲИФА РАҚАМЛАШ
+Инсерт → Паге Нумбер → Боттом Cентер
+⚠ Титул варақда рақам кўринмайди
+⚠ Рақамлаш Киришдан бошланади
+
+📊 ЖАДВАЛ ВА РАСМЛАР РАСМИЙЛАШТИРИШ
+Жадвал 1
+Жадвал 2
+Расм 1
+Расм 2
+Номлари пастки қисмида ёзилади.
+
+📌 ҲАЖМИ
+Тўлиқ расмийлаштирилганда:
+Кириш – 5 бет
+И боб – 20 бет
+ИИ боб – 25 бет
+ИИИ боб – 20 бет
+Хулоса – 5 бет
+Адабиётлар – 3 бет
+Иловалар – 5 бет
+Умумий: 75–85 бет
+
+Агар хоҳласангиз, мен сизга:
+✅ Тайёр .доcх структура матнини кўчиришга тайёр ҳолатда
+✅ Автоматик мундарижали формат
+✅ Саҳифаланган вариант
+✅ Тўлиқ 80 бетлик тўлдирилган матн билан вариант
+ҳам ёзиб бераман.
+Қайси вариант керак:
+Фақат бўш структура
+Тўлиқ тўлдирилган 80 бетлик Wорд мат",2026-03-13T05:31:01.203551
