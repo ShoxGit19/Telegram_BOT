@@ -11,6 +11,18 @@ from transliterate import to_cyrillic, to_latin
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 
+# Qo‘shimcha imkoniyatlar va modullar
+from extra_features import translate_text, ocr_image, speech_to_text
+from inline_handler import inlinequery
+from lang_support import LANGUAGES, get_lang, set_lang
+import os
+
+try:
+    from flask import Flask, request
+except ImportError:
+    Flask = None
+    request = None
+
 # ADMIN ID ni o'zgartiring (o'zingizning Telegram ID)
 ADMIN_ID = 6954909676
 
@@ -196,15 +208,88 @@ async def matn_olish(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "ℹ️ Yordam\n\n"
-        "Bu bot Lotin ↔ Kiril transliteratsiya qiladi.\n\n"
-        "📌 Buyruqlar:\n"
+        LANGUAGES[get_lang(context.user_data)]['help'] +
+        "\n\n📌 Buyruqlar:\n"
         "/start — Boshlash\n"
         "/history — Oxirgi tarjimalar\n"
         "/feedback — Fikr bildirish\n"
-        "/help — Yordam\n\n"
-        "✍️ Istalgan matn yuboring — bot avtomatik aylantirib beradi."
+        "/help — Yordam\n"
+        "/translate — Tarjima (EN/RU ↔ UZ)\n"
+        "/ocr — Rasm matnini tanib olish\n"
+        "/stt — Audio matnini tanib olish\n"
+        "/lang — Tilni o‘zgartirish\n"
+        "\n✍️ Istalgan matn yuboring — bot avtomatik aylantirib beradi."
     )
+
+# --- Tarjima qo‘shimcha imkoniyati ---
+async def translate_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    args = context.args
+    if not args:
+        await update.message.reply_text("Tarjima uchun matn yuboring: /translate <matn>")
+        return
+    text = ' '.join(args)
+    try:
+        # EN/RU -> UZ
+        translated = translate_text(text, dest='uz')
+        await update.message.reply_text(f"UZ: {translated}")
+        # UZ -> RU
+        translated_ru = translate_text(text, dest='ru')
+        await update.message.reply_text(f"RU: {translated_ru}")
+        # UZ -> EN
+        translated_en = translate_text(text, dest='en')
+        await update.message.reply_text(f"EN: {translated_en}")
+    except Exception as e:
+        await update.message.reply_text(f"Tarjima xatoligi: {e}")
+
+# --- OCR qo‘shimcha imkoniyati ---
+async def ocr_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message.document:
+        await update.message.reply_text("Rasm yuboring yoki /ocr buyrug‘ini rasm bilan birga yuboring.")
+        return
+    file = await update.message.document.get_file()
+    file_path = f"temp_{update.message.document.file_name}"
+    await file.download_to_drive(file_path)
+    try:
+        text = ocr_image(file_path)
+        await update.message.reply_text(f"Rasmdan matn: {text}")
+    except Exception as e:
+        await update.message.reply_text(f"OCR xatoligi: {e}")
+    finally:
+        os.remove(file_path)
+
+# --- STT qo‘shimcha imkoniyati ---
+async def stt_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message.voice and not update.message.audio:
+        await update.message.reply_text("Audio yuboring yoki /stt buyrug‘ini audio bilan birga yuboring.")
+        return
+    audio = update.message.voice or update.message.audio
+    file = await audio.get_file()
+    file_path = f"temp_{audio.file_id}.ogg"
+    await file.download_to_drive(file_path)
+    try:
+        text = speech_to_text(file_path)
+        await update.message.reply_text(f"Audio matni: {text}")
+    except Exception as e:
+        await update.message.reply_text(f"STT xatoligi: {e}")
+    finally:
+        os.remove(file_path)
+
+# --- Tilni o‘zgartirish ---
+from telegram import ReplyKeyboardMarkup
+async def lang_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [["uz", "ru", "en"]]
+    await update.message.reply_text(
+        LANGUAGES['uz']['choose_lang'],
+        reply_markup=ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
+    )
+
+async def lang_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    lang = update.message.text.lower()
+    if lang in LANGUAGES:
+        set_lang(context.user_data, lang)
+        await update.message.reply_text(LANGUAGES[lang]['start'])
+    else:
+        await update.message.reply_text("Noto‘g‘ri til tanlandi.")
 
 async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     contact = update.message.contact
@@ -412,10 +497,9 @@ if __name__ == '__main__':
         logger.error("token.txt fayli topilmadi")
         exit(1)
 
+    from telegram.ext import InlineQueryHandler
     app = ApplicationBuilder().token(token).build()
 
-    # ✅ Qo‘shildi: bot ishga tushganda 5 soniyadan keyin broadcast (faqat 1 marta)
-    
     # Commandlar
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
@@ -424,8 +508,28 @@ if __name__ == '__main__':
     app.add_handler(CommandHandler("stats", stats))
     app.add_handler(CommandHandler("export", export_users))
 
+    # Qo‘shimcha imkoniyatlar
+    app.add_handler(CommandHandler("translate", translate_command))
+    app.add_handler(CommandHandler("ocr", ocr_command))
+    app.add_handler(CommandHandler("stt", stt_command))
+    app.add_handler(CommandHandler("lang", lang_command))
+    app.add_handler(MessageHandler(filters.Regex("^(uz|ru|en)$"), lang_choice))
+
     # Contact va matn handlerlari
     app.add_handler(MessageHandler(filters.CONTACT, handle_contact))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, matn_olish))
 
-    app.run_polling()
+    # Inline mode
+    app.add_handler(InlineQueryHandler(inlinequery))
+
+    # Webhook/serverless uchun Flask
+    if Flask is not None and os.getenv('WEBHOOK_MODE') == '1':
+        flask_app = Flask(__name__)
+        @flask_app.route('/webhook', methods=['POST'])
+        def webhook():
+            update = Update.de_json(request.get_json(force=True), app.bot)
+            app.process_update(update)
+            return 'ok'
+        flask_app.run(host='0.0.0.0', port=int(os.getenv('PORT', 8443)))
+    else:
+        app.run_polling()
