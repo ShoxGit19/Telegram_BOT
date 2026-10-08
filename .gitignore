@@ -121,12 +121,23 @@ celerybeat.pid
 
 # Environments
 .env
+token.txt
+.env.*
+!.env.example
 .venv
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Local bot data; may contain personal information
+users.json
+users.txt
+translations.csv
+feedbacks.csv
+data/
+temp_*
 
 # Spyder project settings
 .spyderproject

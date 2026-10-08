@@ -2,20 +2,34 @@ import logging
 import json
 import datetime
 import csv
+import html
 import io
 import os
 import re
 import asyncio  # ✅ Qo‘shildi
 import subprocess  # ✅ Qo‘shildi: git auto push uchun
-from transliterate import to_cyrillic, to_latin
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
+import tempfile
+import uuid
+from pathlib import Path
+from dotenv import load_dotenv
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler, MessageHandler, filters, ContextTypes
 
 # Qo‘shimcha imkoniyatlar va modullar
 from extra_features import translate_text, ocr_image, speech_to_text
 from inline_handler import inlinequery
 from lang_support import LANGUAGES, get_lang, set_lang
-import os
+from request_guard import is_rate_limited
+from transliteration_tools import (
+    DIRECTIONS,
+    add_dictionary_entry,
+    get_user_dictionary,
+    get_user_direction,
+    remove_dictionary_entry,
+    set_user_direction,
+    transliteration_candidates,
+    transliterate_for_user,
+)
 
 try:
     from flask import Flask, request
@@ -25,6 +39,9 @@ except ImportError:
 
 # ADMIN ID ni o'zgartiring (o'zingizning Telegram ID)
 ADMIN_ID = 6954909676
+MAX_TEXT_CHARS = 2000
+MAX_TEXT_FILE_BYTES = 1_000_000
+MAX_TEXT_FILE_CHARS = 100_000
 
 # Start xabari
 START_MESSAGE = (
@@ -164,10 +181,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(START_MESSAGE)
 
 async def matn_olish(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    input_text = update.message.text or ""
+    if is_rate_limited(user.id, "chat", limit=8, window_seconds=10):
+        await update.message.reply_text("So'rovlar juda tez kelyapti. 10 soniyadan keyin davom eting.")
+        return
+    if len(input_text) > MAX_TEXT_CHARS:
+        await update.message.reply_text(f"Matn juda uzun. Eng ko'pi bilan {MAX_TEXT_CHARS} ta belgi yuboring.")
+        return
+
     # Agar foydalanuvchi feedback yuborishi kutilayotgan bo'lsa, feedback sifatida saqlaymiz
     if context.user_data.get('awaiting_feedback'):
-        feedback_text = update.message.text
-        user = update.effective_user
+        feedback_text = input_text
         user_id = str(user.id)
         user_name = user.username or user.first_name or "Foydalanuvchi"
         try:
@@ -182,16 +207,14 @@ async def matn_olish(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Fikrni saqlashda xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring.")
         return
 
-    kirilgan_matn = update.message.text or ""
-    user = update.effective_user
+    kirilgan_matn = input_text
     user_name = user.username or user.first_name or "Foydalanuvchi"
     user_id = str(user.id)
     try:
-        # Yangi: kiril bor-yo'qligini aniqlash uchun contains_cyrillic dan foydalanamiz
-        if contains_cyrillic(kirilgan_matn):
-            javob = to_latin(kirilgan_matn)
-        else:
-            javob = to_cyrillic(kirilgan_matn)
+        direction = get_user_direction(user.id)
+        dictionary = get_user_dictionary(user.id)
+        candidates = transliteration_candidates(kirilgan_matn, direction, dictionary)
+        javob = candidates[0]
 
         # Tarjima saqlash
         os.makedirs('data', exist_ok=True)
@@ -200,11 +223,90 @@ async def matn_olish(update: Update, context: ContextTypes.DEFAULT_TYPE):
             writer.writerow([user_id, kirilgan_matn, javob, datetime.datetime.now().isoformat()])
 
         # Monospaced format - HTML <pre>
-        await update.message.reply_text(f"{user_name} siz kiritgan so'z:\n<pre>{javob}</pre>", parse_mode='HTML')
-        await update.message.reply_text("Yana so'z kiring:")
+        reply_markup = None
+        if len(candidates) > 1:
+            choices = context.user_data.setdefault("transliteration_choices", {})
+            choice_id = uuid.uuid4().hex[:8]
+            choices[choice_id] = candidates[1:]
+            while len(choices) > 5:
+                choices.pop(next(iter(choices)))
+            reply_markup = InlineKeyboardMarkup([
+                [InlineKeyboardButton(
+                    f"Variant {index + 1}: {' '.join(candidate.split())[:40]}",
+                    callback_data=f"translit:{choice_id}:{index}",
+                )]
+                for index, candidate in enumerate(candidates[1:])
+            ])
+        prompt = "Boshqa variantni tanlang:" if reply_markup else "Yana so'z kiriting."
+        await update.message.reply_text(
+            f"{html.escape(user_name)} siz kiritgan so'z:\n<pre>{html.escape(javob)}</pre>\n{prompt}",
+            parse_mode='HTML',
+            reply_markup=reply_markup,
+        )
     except Exception as e:
         logger.error(f"Xatolik: {e}")
         await update.message.reply_text("Xatolik yuz berdi. Iltimos, qayta urinib ko'ring.")
+
+
+async def transliteration_choice_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    try:
+        _, choice_id, index_text = query.data.split(":", maxsplit=2)
+        index = int(index_text)
+        alternatives = context.user_data.get("transliteration_choices", {}).pop(choice_id, None)
+        if alternatives is None or index < 0 or index >= len(alternatives):
+            raise ValueError("Tanlov eskirgan")
+    except (ValueError, TypeError):
+        await query.answer("Bu variant eskirgan. Matnni qayta yuboring.", show_alert=True)
+        return
+    await query.answer("Variant tanlandi.")
+    await query.edit_message_text(f"<pre>{html.escape(alternatives[index])}</pre>", parse_mode="HTML")
+
+
+async def txt_file_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    document = update.message.document
+    if is_rate_limited(update.effective_user.id, "file", limit=3, window_seconds=60):
+        await update.message.reply_text("Fayllar juda tez yuborildi. Bir daqiqadan keyin qayta urinib ko'ring.")
+        return
+    filename = document.file_name or ""
+    if not filename.lower().endswith(".txt"):
+        await update.message.reply_text("Faqat .txt fayl yuboring.")
+        return
+    if document.file_size is not None and document.file_size > MAX_TEXT_FILE_BYTES:
+        await update.message.reply_text("Fayl hajmi 1 MB dan oshmasligi kerak.")
+        return
+    try:
+        telegram_file = await document.get_file()
+        with tempfile.TemporaryDirectory(prefix="telegram_translit_") as temporary_directory:
+            source_path = Path(temporary_directory) / "source.txt"
+            result_path = Path(temporary_directory) / "transliterated.txt"
+            await telegram_file.download_to_drive(custom_path=source_path)
+            if source_path.stat().st_size > MAX_TEXT_FILE_BYTES:
+                await update.message.reply_text("Fayl hajmi 1 MB dan oshmasligi kerak.")
+                return
+            source_text = source_path.read_text(encoding="utf-8-sig")
+            if len(source_text) > MAX_TEXT_FILE_CHARS:
+                await update.message.reply_text("Faylda eng ko'pi bilan 100 000 ta belgi bo'lishi mumkin.")
+                return
+
+            user_id = update.effective_user.id
+            result_text = transliterate_for_user(
+                source_text,
+                get_user_direction(user_id),
+                get_user_dictionary(user_id),
+            )
+            result_path.write_text(result_text, encoding="utf-8")
+            with result_path.open("rb") as result_file:
+                await update.message.reply_document(
+                    document=result_file,
+                    filename="transliterated.txt",
+                    caption="Transliteratsiya tayyor.",
+                )
+    except UnicodeDecodeError:
+        await update.message.reply_text("Fayl UTF-8 matn formatida bo'lishi kerak.")
+    except Exception:
+        logger.exception("TXT faylni transliteratsiya qilishda xatolik")
+        await update.message.reply_text("Faylni qayta ishlashda xatolik yuz berdi.")
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -218,8 +320,92 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/ocr — Rasm matnini tanib olish\n"
         "/stt — Audio matnini tanib olish\n"
         "/lang — Tilni o‘zgartirish\n"
+        "/direction — Transliteratsiya yo‘nalishini tanlash\n"
+        "/dict_add Lotin | Кирилл — Shaxsiy lug'atga qoida qo'shish\n"
+        "/dict_list — Shaxsiy lug'atni ko'rish\n"
+        "/dict_remove Lotin — Lug'at qoidasini o'chirish\n"
         "\n✍️ Istalgan matn yuboring — bot avtomatik aylantirib beradi."
     )
+
+
+async def direction_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("Avtomatik", callback_data="direction:auto")],
+        [InlineKeyboardButton("Lotin → Kiril", callback_data="direction:latin_to_cyrillic")],
+        [InlineKeyboardButton("Kiril → Lotin", callback_data="direction:cyrillic_to_latin")],
+    ])
+    await update.message.reply_text("Transliteratsiya yo'nalishini tanlang:", reply_markup=keyboard)
+
+
+async def direction_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    direction = query.data.partition(":")[2]
+    if direction not in DIRECTIONS:
+        await query.answer("Noto'g'ri yo'nalish.", show_alert=True)
+        return
+    try:
+        set_user_direction(query.from_user.id, direction)
+    except Exception:
+        logger.exception("Transliteratsiya yo'nalishini saqlashda xatolik")
+        await query.answer("Yo'nalishni saqlab bo'lmadi.", show_alert=True)
+        return
+    labels = {
+        "auto": "Avtomatik aniqlash",
+        "latin_to_cyrillic": "Lotin → Kiril",
+        "cyrillic_to_latin": "Kiril → Lotin",
+    }
+    await query.answer("Yo'nalish saqlandi.")
+    await query.edit_message_text(f"Tanlangan yo'nalish: {labels[direction]}")
+
+
+async def dictionary_add_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    value = " ".join(context.args)
+    if "|" not in value:
+        await update.message.reply_text("Namuna: /dict_add Shaxzoda | Шахзода")
+        return
+    latin, cyrillic = value.split("|", maxsplit=1)
+    try:
+        add_dictionary_entry(update.effective_user.id, latin, cyrillic)
+        await update.message.reply_text("Qoida saqlandi va ikki yo'nalishda ham ishlaydi.")
+    except ValueError as error:
+        await update.message.reply_text(str(error))
+    except Exception:
+        logger.exception("Shaxsiy lug'atni saqlashda xatolik")
+        await update.message.reply_text("Lug'at qoidasini saqlab bo'lmadi.")
+
+
+async def dictionary_list_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        entries = get_user_dictionary(update.effective_user.id)
+    except Exception:
+        logger.exception("Shaxsiy lug'atni o'qishda xatolik")
+        await update.message.reply_text("Lug'atni o'qib bo'lmadi.")
+        return
+    if not entries:
+        await update.message.reply_text("Shaxsiy lug'atingiz hozircha bo'sh.")
+        return
+    lines = [f"{latin} → {cyrillic}" for latin, cyrillic in list(entries.items())[:20]]
+    remaining = len(entries) - len(lines)
+    if remaining:
+        lines.append(f"... va yana {remaining} ta qoida")
+    await update.message.reply_text("Shaxsiy lug'atingiz:\n" + "\n".join(lines))
+
+
+async def dictionary_remove_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    latin = " ".join(context.args).strip()
+    if not latin:
+        await update.message.reply_text("O'chirish uchun lotincha so'zni yozing: /dict_remove Shaxzoda")
+        return
+    try:
+        removed = remove_dictionary_entry(update.effective_user.id, latin)
+    except Exception:
+        logger.exception("Shaxsiy lug'at qoidasini o'chirishda xatolik")
+        await update.message.reply_text("Lug'at qoidasini o'chirib bo'lmadi.")
+        return
+    if removed:
+        await update.message.reply_text("Qoida o'chirildi.")
+    else:
+        await update.message.reply_text("Bunday qoida lug'atingizda topilmadi.")
 
 # --- Tarjima qo‘shimcha imkoniyati ---
 async def translate_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -490,11 +676,10 @@ if __name__ == '__main__':
     logger = logging.getLogger("dastur_loglari")
     logger.setLevel(logging.DEBUG)
 
-    try:
-        with open('token.txt', 'r', encoding='utf-8') as f:
-            token = f.read().strip()
-    except FileNotFoundError:
-        logger.error("token.txt fayli topilmadi")
+    load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+    token = os.getenv("BOT_TOKEN")
+    if not token:
+        logger.error("BOT_TOKEN .env faylida sozlanmagan")
         exit(1)
 
     from telegram.ext import InlineQueryHandler
@@ -513,10 +698,17 @@ if __name__ == '__main__':
     app.add_handler(CommandHandler("ocr", ocr_command))
     app.add_handler(CommandHandler("stt", stt_command))
     app.add_handler(CommandHandler("lang", lang_command))
+    app.add_handler(CommandHandler("direction", direction_command))
+    app.add_handler(CommandHandler("dict_add", dictionary_add_command))
+    app.add_handler(CommandHandler("dict_list", dictionary_list_command))
+    app.add_handler(CommandHandler("dict_remove", dictionary_remove_command))
+    app.add_handler(CallbackQueryHandler(direction_callback, pattern=r"^direction:"))
+    app.add_handler(CallbackQueryHandler(transliteration_choice_callback, pattern=r"^translit:"))
     app.add_handler(MessageHandler(filters.Regex("^(uz|ru|en)$"), lang_choice))
 
     # Contact va matn handlerlari
     app.add_handler(MessageHandler(filters.CONTACT, handle_contact))
+    app.add_handler(MessageHandler(filters.Document.ALL, txt_file_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, matn_olish))
 
     # Inline mode
