@@ -15,7 +15,7 @@ import math
 import threading
 from pathlib import Path
 from dotenv import load_dotenv
-from telegram import CopyTextButton, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, MessageEntity, Update
+from telegram import BotCommand, BotCommandScopeChat, BotCommandScopeDefault, CopyTextButton, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, MessageEntity, Update
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler, InlineQueryHandler, MessageHandler, filters, ContextTypes
 from speech_recognition import RequestError, UnknownValueError
 from telegram.error import TelegramError
@@ -46,13 +46,19 @@ MAX_TEXT_FILE_CHARS = 100_000
 MAX_AUDIO_FILE_BYTES = 20_000_000
 PROGRESS_UPDATE_SECONDS = 1
 MENU_ACTIONS = {
+    "🔤 Lotin ↔ Kiril": "transliteration_menu",
+    "🌐 Tarjima": "translation_menu",
+    "📚 Lug'at": "dictionary_menu",
+    "📖 Lug'atni ko'rish": "dictionary_list",
+    "➕ Qoida qo'shish": "dictionary_add",
+    "➖ Qoida o'chirish": "dictionary_remove",
     "🔤 Lotin → Kiril": "latin_to_cyrillic",
     "🔠 Kiril → Lotin": "cyrillic_to_latin",
-    "🌐 Tarjima": "translate",
     "🎙 Ovoz → matn": "voice",
     "🖼 Rasm → matn": "image",
     "📄 TXT fayl": "text_file",
     "🌐 TXT tarjima": "txt_translate",
+    "⚙️ Boshqa xizmatlar": "more_menu",
     "↔ Yo'nalish": "direction_menu",
     "🌐 Til": "language_menu",
     "💬 Fikr": "feedback",
@@ -66,23 +72,46 @@ MENU_ACTIONS = {
 
 def main_menu_markup(is_admin=False):
     keyboard = [
-        ["🔤 Lotin → Kiril", "🔠 Kiril → Lotin"],
-        ["🌐 Tarjima", "🎙 Ovoz → matn"],
-        ["🖼 Rasm → matn", "📄 TXT fayl"],
-        ["🌐 TXT tarjima"],
-        ["↔ Yo'nalish", "🌐 Til"],
-        ["💬 Fikr", "📜 Tarix"],
-        ["📚 Lug'at", "➕ Lug'at qo'shish"],
-        ["➖ Lug'at o'chirish", "❔ Yordam"],
+        ["🔤 Lotin ↔ Kiril", "🌐 Tarjima"],
+        ["🖼 Rasm → matn", "🎙 Ovoz → matn"],
+        ["📚 Lug'at", "⚙️ Boshqa xizmatlar"],
+        ["🏠 Menyu"],
     ]
-    if is_admin:
-        keyboard.append(["📊 Statistika", "📤 Export"])
-    keyboard.append(["🏠 Menyu"])
     return ReplyKeyboardMarkup(
         keyboard,
         resize_keyboard=True,
         is_persistent=True,
         input_field_placeholder="Amalni tanlang yoki matn yuboring",
+    )
+
+
+def secondary_menu_markup(is_admin=False):
+    keyboard = [
+        ["📜 Tarix", "💬 Fikr"],
+        ["↔ Yo'nalish", "🌐 Til"],
+        ["❔ Yordam"],
+    ]
+    if is_admin:
+        keyboard.append(["📊 Statistika", "📤 Export"])
+    keyboard.append(["⬅️ Asosiy menyu"])
+    return ReplyKeyboardMarkup(
+        keyboard,
+        resize_keyboard=True,
+        is_persistent=True,
+        input_field_placeholder="Amalni tanlang yoki matn yuboring",
+    )
+
+
+def dictionary_menu_markup():
+    return ReplyKeyboardMarkup(
+        [
+            ["📖 Lug'atni ko'rish"],
+            ["➕ Qoida qo'shish", "➖ Qoida o'chirish"],
+            ["⬅️ Asosiy menyu"],
+        ],
+        resize_keyboard=True,
+        is_persistent=True,
+        input_field_placeholder="Lug'at amalini tanlang",
     )
 
 
@@ -307,6 +336,17 @@ async def matn_olish(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context.user_data.pop("selected_action", None)
             await direction_command(update, context)
             return
+        if action == "transliteration_menu":
+            await prompt_transliteration_menu(update.message)
+            return
+        if action == "translation_menu":
+            await prompt_translation_menu(update.message)
+            return
+        if action == "dictionary_menu":
+            await update.message.reply_text(
+                "Lug'at amalini tanlang:", reply_markup=dictionary_menu_markup(),
+            )
+            return
         if action == "language_menu":
             context.user_data.pop("selected_action", None)
             await lang_command(update, context)
@@ -327,13 +367,19 @@ async def matn_olish(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 prompt = "Lotincha va kirillcha juftlikni yuboring. Namuna: Shaxzoda | Шахзода"
             else:
                 prompt = "O'chiriladigan lotincha so'zni yuboring."
-            await update.message.reply_text(prompt, reply_markup=main_menu_markup(user.id == ADMIN_ID))
+            await update.message.reply_text(prompt, reply_markup=dictionary_menu_markup())
             return
         if action == "stats":
             await stats(update, context)
             return
         if action == "export":
             await export_users(update, context)
+            return
+        if action == "more_menu":
+            await update.message.reply_text(
+                "Qo'shimcha xizmatni tanlang:",
+                reply_markup=secondary_menu_markup(user.id == ADMIN_ID),
+            )
             return
         context.user_data["selected_action"] = action
         if action == "txt_translate":
@@ -360,7 +406,7 @@ async def matn_olish(update: Update, context: ContextTypes.DEFAULT_TYPE):
         clear_pending_actions(context.user_data)
         await help_command(update, context)
         return
-    if input_text == "🏠 Menyu":
+    if input_text in {"🏠 Menyu", "⬅️ Asosiy menyu"}:
         clear_pending_actions(context.user_data)
         await show_main_menu(update.message)
         return
@@ -397,7 +443,7 @@ async def matn_olish(update: Update, context: ContextTypes.DEFAULT_TYPE):
         latin, cyrillic = input_text.split("|", maxsplit=1)
         try:
             add_dictionary_entry(user.id, latin, cyrillic)
-            await update.message.reply_text("Lug'at qoidasi saqlandi.", reply_markup=main_menu_markup(user.id == ADMIN_ID))
+            await update.message.reply_text("Lug'at qoidasi saqlandi.", reply_markup=dictionary_menu_markup())
         except ValueError as error:
             await update.message.reply_text(str(error))
             context.user_data["awaiting_dictionary_action"] = dictionary_action
@@ -406,7 +452,7 @@ async def matn_olish(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             removed = remove_dictionary_entry(user.id, input_text)
             response = "Lug'at qoidasi o'chirildi." if removed else "Bu qoida lug'atingizda topilmadi."
-            await update.message.reply_text(response, reply_markup=main_menu_markup(user.id == ADMIN_ID))
+            await update.message.reply_text(response, reply_markup=dictionary_menu_markup())
         except Exception:
             logger.exception("Shaxsiy lug'at qoidasini o'chirishda xatolik")
             await update.message.reply_text("Lug'at qoidasini o'chirib bo'lmadi.")
@@ -435,7 +481,7 @@ async def matn_olish(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_name = user.username or user.first_name or "Foydalanuvchi"
     user_id = str(user.id)
     try:
-        direction = selected_action if selected_action in {
+        direction = "auto" if selected_action == "transliterate_auto" else selected_action if selected_action in {
             "latin_to_cyrillic",
             "cyrillic_to_latin",
         } else get_user_direction(user.id)
@@ -577,6 +623,55 @@ async def copy_result_callback(update: Update, context: ContextTypes.DEFAULT_TYP
                 "📋 Nusxa olish", copy_text=CopyTextButton(text=part),
             )]]),
         )
+
+
+async def prompt_translation_menu(message):
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("📝 Matn tarjimasi", callback_data="translation_menu:text")],
+        [InlineKeyboardButton("📄 TXT tarjimasi", callback_data="translation_menu:file")],
+    ])
+    await message.reply_text("Qaysi turdagi tarjima kerak?", reply_markup=keyboard)
+
+
+async def translation_menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    if query.data == "translation_menu:text":
+        clear_pending_actions(context.user_data)
+        context.user_data["selected_action"] = "translate"
+        context.user_data["awaiting_translation"] = True
+        await query.answer()
+        await query.edit_message_text("Tarjima qilinadigan matnni yuboring. UZ, RU va EN tarjimalarini beraman.")
+        return
+    if query.data == "translation_menu:file":
+        clear_pending_actions(context.user_data)
+        await query.answer()
+        await prompt_txt_translation_language(query.message, context, edit=True)
+        return
+    await query.answer("Noto'g'ri tarjima turi.", show_alert=True)
+
+
+async def prompt_transliteration_menu(message):
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("✍️ Matn (avto)", callback_data="translit_menu:text")],
+        [InlineKeyboardButton("📄 TXT fayl", callback_data="translit_menu:file")],
+    ])
+    await message.reply_text("Lotin-kiril amali turini tanlang:", reply_markup=keyboard)
+
+
+async def transliteration_menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    clear_pending_actions(context.user_data)
+    if query.data == "translit_menu:text":
+        context.user_data["selected_action"] = "transliterate_auto"
+        await query.answer()
+        await query.edit_message_text("Lotin yoki kiril matnni yuboring. Yo'nalishni o'zim aniqlayman.")
+        return
+    if query.data == "translit_menu:file":
+        context.user_data["selected_action"] = "text_file"
+        await query.answer()
+        await query.edit_message_text(".txt fayl yuboring. Lotin/kiril yo'nalishini o'zim aniqlab aylantiraman.")
+        return
+    await query.answer("Noto'g'ri transliteratsiya turi.", show_alert=True)
 
 
 async def prompt_txt_file_action(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -727,21 +822,10 @@ async def txt_file_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         LANGUAGES[get_lang(context.user_data)]['help'] +
-        "\n\n📌 Buyruqlar:\n"
-        "/start — Boshlash\n"
-        "/menu — Asosiy menyuni ochish\n"
-        "/history — Oxirgi tarjimalar\n"
-        "/feedback — Fikr bildirish\n"
-        "/help — Yordam\n"
-        "/translate — Tarjima (EN/RU ↔ UZ)\n"
-        "/ocr — Rasm matnini tanib olish\n"
-        "/stt — Audio matnini tanib olish\n"
-        "/lang — Tilni o‘zgartirish\n"
-        "/direction — Transliteratsiya yo‘nalishini tanlash\n"
-        "/dict_add Lotin | Кирилл — Shaxsiy lug'atga qoida qo'shish\n"
-        "/dict_list — Shaxsiy lug'atni ko'rish\n"
-        "/dict_remove Lotin — Lug'at qoidasini o'chirish\n"
-        "\n✍️ Istalgan matn yuboring — bot avtomatik aylantirib beradi."
+        "\n\nKerakli amalni pastdagi menyu tugmalaridan tanlang."
+        " TXT tarjimasida avval tilni tanlang, keyin .txt fayl yuboring."
+        " Istalgan oddiy matn saqlangan yo'nalishda transliteratsiya qilinadi."
+        "\n\nBuyruqlar: /start, /menu, /help."
     )
 
 
@@ -809,16 +893,21 @@ async def dictionary_list_command(update: Update, context: ContextTypes.DEFAULT_
         entries = get_user_dictionary(update.effective_user.id)
     except Exception:
         logger.exception("Shaxsiy lug'atni o'qishda xatolik")
-        await update.message.reply_text("Lug'atni o'qib bo'lmadi.")
+        await update.message.reply_text("Lug'atni o'qib bo'lmadi.", reply_markup=dictionary_menu_markup())
         return
     if not entries:
-        await update.message.reply_text("Shaxsiy lug'atingiz hozircha bo'sh.")
+        await update.message.reply_text(
+            "Shaxsiy lug'atingiz hozircha bo'sh.", reply_markup=dictionary_menu_markup(),
+        )
         return
     lines = [f"{latin} → {cyrillic}" for latin, cyrillic in list(entries.items())[:20]]
     remaining = len(entries) - len(lines)
     if remaining:
         lines.append(f"... va yana {remaining} ta qoida")
-    await update.message.reply_text("Shaxsiy lug'atingiz:\n" + "\n".join(lines))
+    await update.message.reply_text(
+        "Shaxsiy lug'atingiz:\n" + "\n".join(lines),
+        reply_markup=dictionary_menu_markup(),
+    )
 
 
 async def dictionary_remove_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -889,6 +978,9 @@ async def ocr_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not document and not photos:
         context.user_data["selected_action"] = "image"
         await update.message.reply_text("Matni olinadigan rasmni yuboring.", reply_markup=main_menu_markup(update.effective_user.id == ADMIN_ID))
+        return
+    if is_rate_limited(update.effective_user.id, "image", limit=5, window_seconds=60):
+        await update.message.reply_text("Rasm juda ko'p yuborildi. Bir daqiqadan keyin qayta urinib ko'ring.")
         return
     try:
         image_file = document if document else photos[-1]
@@ -1178,12 +1270,33 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Statistikani olishda xatolik yuz berdi.")
 
 
+async def configure_bot_commands(application):
+    public_commands = [
+        BotCommand("start", "Botni boshlash"),
+        BotCommand("menu", "Asosiy tugmalarni ochish"),
+        BotCommand("help", "Yordam"),
+    ]
+    admin_commands = public_commands + [
+        BotCommand("stats", "Bot statistikasi"),
+        BotCommand("export", "Ma'lumotlarni eksport qilish"),
+    ]
+    try:
+        await application.bot.set_my_commands(
+            public_commands, scope=BotCommandScopeDefault(),
+        )
+        await application.bot.set_my_commands(
+            admin_commands, scope=BotCommandScopeChat(chat_id=ADMIN_ID),
+        )
+    except TelegramError:
+        logger.warning("Telegram buyruqlar ro'yxatini yangilab bo'lmadi", exc_info=True)
+
+
 def build_application(token=None):
     load_dotenv(Path(__file__).resolve().parent / ".env")
     token = token or os.getenv("BOT_TOKEN")
     if not token:
         raise RuntimeError("BOT_TOKEN .env faylida sozlanmagan")
-    app = ApplicationBuilder().token(token).build()
+    app = ApplicationBuilder().token(token).post_init(configure_bot_commands).build()
     # Commandlar
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("menu", menu_command))
@@ -1206,6 +1319,8 @@ def build_application(token=None):
     app.add_handler(CallbackQueryHandler(direction_callback, pattern=r"^direction:"))
     app.add_handler(CallbackQueryHandler(language_callback, pattern=r"^language:"))
     app.add_handler(CallbackQueryHandler(copy_result_callback, pattern=r"^copy:"))
+    app.add_handler(CallbackQueryHandler(translation_menu_callback, pattern=r"^translation_menu:"))
+    app.add_handler(CallbackQueryHandler(transliteration_menu_callback, pattern=r"^translit_menu:"))
     app.add_handler(CallbackQueryHandler(txt_file_action_callback, pattern=r"^txt_action:"))
     app.add_handler(CallbackQueryHandler(transliteration_choice_callback, pattern=r"^translit:"))
 

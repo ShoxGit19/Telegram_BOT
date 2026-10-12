@@ -13,7 +13,7 @@ O‘zbek lotin va kiril yozuvlari o‘rtasida transliteratsiya, UZ/RU/EN tarjima
 - Natijalarni nusxalash, shaxsiy lug‘at, e/ye uchun muqobil variantlar va transliteratsiya tarixi.
 - Ish tugaguncha yangilanadigan timer; tarjimada haqiqiy tezlikdan hisoblangan taxminiy qolgan vaqt.
 - /start orqali foydalanuvchini ro‘yxatga olish va mavjud ma’lumotlarini yangilash.
-- Inline rejim, doimiy menyu, admin statistikasi va CSV eksporti.
+- Inline rejim, ixcham doimiy menyu, admin statistikasi va CSV eksporti.
 - Alohida skript orqali bir martalik yangilanish xabarini yuborish.
 
 ## Talablar va o‘rnatish
@@ -110,25 +110,23 @@ Linux/macOS:
 
 ## Foydalanish
 
-Menyudan amalni tanlang, keyin shu amalga mos matn, rasm, ovoz yoki fayl yuboring. Boshqa amalga o‘tish uchun menyudan yangi amal tanlang.
+Asosiy menyuda ko‘p ishlatiladigan amallar bor. Qo‘shimcha ishlar uchun **Boshqa xizmatlar** tugmasini bosing. Amalni tanlagach, bot so‘ragan matn, rasm, ovoz yoki faylni yuboring.
 
 | Amal | Tartibi va natijasi |
 | --- | --- |
 | Oddiy matn | Saqlangan yo‘nalish bo‘yicha transliteratsiya qilinadi. |
-| 🔤 Lotin → Kiril / 🔠 Kiril → Lotin | Yo‘nalishni tanlang, keyin matn yuboring. |
-| 🌐 Tarjima | Matn yuboring; UZ, RU va EN natijalari alohida qaytadi. |
-| 📄 TXT fayl | Transliteratsiya yoki TXT tarjimasini tanlang, keyin fayl yuboring. |
-| 🌐 TXT tarjima | Avval UZ/RU/EN tanlang, keyin TXT yuboring; tanlangan tilda TXT qaytadi. |
+| 🔤 Lotin ↔ Kiril | Matn (avto) yoki TXT faylni tanlang. Matn rejimi lotin/kirilni o‘zi aniqlaydi. |
+| 🌐 Tarjima | Ichidan matn tarjimasi yoki TXT tarjimasini tanlang. TXT tarjimasida UZ/RU/EN tanlanadi. |
 | 🖼 Rasm → matn | Surat yoki rasm fayli yuboring; topilgan matn qaytadi. |
 | 🎙 Ovoz → matn | Ovozli xabar yoki audio yuboring; o‘zbekcha nutq taniladi. |
 | ↔ Yo‘nalish | Avtomatik, lotin → kiril yoki kiril → lotin yo‘nalishini saqlang. |
-| 📚 Lug‘at | Shaxsiy qoidalarni ko‘ring; qo‘shish/o‘chirish amallari ham menyuda bor. |
+| 📚 Lug‘at | Ichidan qoidalarni ko‘rish, qo‘shish yoki o‘chirishni tanlang. |
 | 📜 Tarix / 💬 Fikr / 🌐 Til | Oxirgi transliteratsiyalar, fikr yuborish va interfeys tilini tanlash. |
 
 ### TXT fayllar
 
-- **Transliteratsiya:** `TXT fayl → Transliteratsiya → fayl`. Natija: `transliterated.txt`.
-- **Tarjima:** `TXT tarjima → UZ / RU / EN → fayl`. Natija: `translated_uz.txt`, `translated_ru.txt` yoki `translated_en.txt`.
+- **Transliteratsiya:** `Lotin ↔ Kiril → TXT fayl → fayl`. Yo‘nalish avtomatik aniqlanadi. Natija: `transliterated.txt`.
+- **Tarjima:** `Tarjima → TXT tarjimasi → UZ / RU / EN → fayl`. Natija: `translated_uz.txt`, `translated_ru.txt` yoki `translated_en.txt`.
 - Amal tanlanmasdan yuborilgan TXT fayl saqlangan yo‘nalish bo‘yicha transliteratsiya qilinadi.
 - Fayl UTF-8 formatida bo‘lishi kerak; UTF-8 BOM ham qabul qilinadi.
 - Tarjima bo‘laklarga ajratiladi; asl satr ajratgichlari saqlanadi.
@@ -153,18 +151,17 @@ Inline rejim uchun BotFather’da `/setinline` ni yoqing. Keyin boshqa chatda `@
 
 ## Buyruqlar
 
+Telegram buyruqlar ro‘yxati ixcham: `/start`, `/menu` va `/help`. Qolgan amallar tugmalar orqali ochiladi. Eski buyruqlar moslik uchun ishlashda davom etadi.
+
 | Buyruq | Vazifasi |
 | --- | --- |
 | `/start` | Foydalanuvchini tekshirish/saqlash va menyuni ochish. |
 | `/menu` | Kutilayotgan amalni bekor qilish va menyuni ochish. |
 | `/help` | Yordam. |
-| `/translate [matn]` | Matn tarjimasi; matn berilmasa keyingi xabarni kutadi. |
-| `/txt_translate` | TXT tarjimasi uchun UZ/RU/EN tanlash. |
-| `/ocr` / `/stt` | Rasm yoki audio kutish. |
-| `/direction` / `/lang` | Transliteratsiya yo‘nalishi yoki interfeys tili. |
-| `/dict_add` / `/dict_list` / `/dict_remove` | Shaxsiy lug‘at. |
-| `/history` / `/feedback` | Transliteratsiya tarixi yoki fikr yuborish. |
-| `/stats` / `/export` | Faqat admin uchun statistika va CSV eksporti. |
+| `/translate`, `/txt_translate`, `/ocr`, `/stt` | Eski tezkor buyruqlar; moslik uchun saqlangan. |
+| `/direction`, `/lang`, `/dict_add`, `/dict_list`, `/dict_remove` | Sozlama va lug‘at uchun eski tezkor buyruqlar. |
+| `/history`, `/feedback` | Tarix va fikr uchun eski tezkor buyruqlar. |
+| `/stats`, `/export` | Faqat admin uchun; adminning buyruqlar ro‘yxatida ko‘rinadi. |
 
 ## Cheklovlar
 
@@ -176,6 +173,7 @@ Inline rejim uchun BotFather’da `/setinline` ni yoqing. Keyin boshqa chatda `@
 | Matn so‘rovlari | 10 soniyada 8 ta. |
 | Inline so‘rovlari | 10 soniyada 40 ta. |
 | TXT / audio | Har biri uchun bir daqiqada 3 ta. |
+| Rasm OCR | Bir daqiqada 5 ta. |
 
 Telegram’ning o‘z limitlari ham amal qiladi. Bot API orqali oddiy foydalanuvchiga `@username` bilan shaxsiy xabar yuborib bo‘lmaydi; botga ochiq chat ID kerak. Foydalanuvchi avval botga xabar yuborishi kerak. [Telegram Bot API](https://core.telegram.org/bots/api#sendmessage), [botlar haqida](https://core.telegram.org/bots#how-do-bots-work).
 

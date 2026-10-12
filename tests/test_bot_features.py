@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import ANY, AsyncMock, Mock, patch
+from unittest.mock import ANY, AsyncMock, Mock, mock_open, patch
 
 from PIL import Image
 from telegram import Message
@@ -92,6 +92,123 @@ class CopyTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertTrue(query.answer.await_args.kwargs["show_alert"])
         query.message.reply_text.assert_not_awaited()
+
+
+class MenuTests(unittest.IsolatedAsyncioTestCase):
+    def test_home_menu_keeps_only_primary_actions(self):
+        menu = first.main_menu_markup()
+        labels = [button.text for row in menu.keyboard for button in row]
+        self.assertEqual(len(menu.keyboard), 4)
+        self.assertIn("🌐 Tarjima", labels)
+        self.assertIn("🔤 Lotin ↔ Kiril", labels)
+        self.assertIn("📚 Lug'at", labels)
+        self.assertIn("⚙️ Boshqa xizmatlar", labels)
+        self.assertNotIn("📄 TXT fayl", labels)
+        self.assertNotIn("🌐 TXT tarjima", labels)
+        self.assertNotIn("📜 Tarix", labels)
+
+    def test_secondary_menu_contains_settings_and_admin_tools_when_allowed(self):
+        menu = first.secondary_menu_markup(is_admin=True)
+        labels = [button.text for row in menu.keyboard for button in row]
+        for label in ("📜 Tarix", "↔ Yo'nalish", "🌐 Til", "📊 Statistika", "📤 Export"):
+            self.assertIn(label, labels)
+
+    def test_dictionary_menu_contains_view_add_and_remove_choices(self):
+        labels = [button.text for row in first.dictionary_menu_markup().keyboard for button in row]
+        self.assertEqual(labels, [
+            "📖 Lug'atni ko'rish", "➕ Qoida qo'shish", "➖ Qoida o'chirish", "⬅️ Asosiy menyu",
+        ])
+
+    async def test_more_button_opens_secondary_menu(self):
+        message = message_mock(text="⚙️ Boshqa xizmatlar")
+        update = SimpleNamespace(message=message, effective_user=SimpleNamespace(id=100))
+        await first.matn_olish(update, SimpleNamespace(user_data={}))
+        self.assertEqual(
+            message.reply_text.await_args.kwargs["reply_markup"].keyboard,
+            first.secondary_menu_markup().keyboard,
+        )
+
+    async def test_translation_button_opens_text_and_txt_choices(self):
+        message = message_mock(text="🌐 Tarjima")
+        await first.matn_olish(
+            SimpleNamespace(message=message, effective_user=SimpleNamespace(id=100)),
+            SimpleNamespace(user_data={}),
+        )
+        buttons = [
+            button
+            for row in message.reply_text.await_args.kwargs["reply_markup"].inline_keyboard
+            for button in row
+        ]
+        self.assertEqual([button.callback_data for button in buttons], [
+            "translation_menu:text", "translation_menu:file",
+        ])
+
+    async def test_translation_text_choice_awaits_text_and_txt_choice_asks_language(self):
+        context = SimpleNamespace(user_data={})
+        query = SimpleNamespace(
+            data="translation_menu:text", answer=AsyncMock(),
+            edit_message_text=AsyncMock(), message=message_mock(),
+        )
+        await first.translation_menu_callback(SimpleNamespace(callback_query=query), context)
+        self.assertEqual(context.user_data["selected_action"], "translate")
+        self.assertTrue(context.user_data["awaiting_translation"])
+
+        query.data = "translation_menu:file"
+        await first.translation_menu_callback(SimpleNamespace(callback_query=query), context)
+        self.assertEqual(context.user_data["selected_action"], "text_file_language")
+        buttons = [
+            button
+            for row in query.message.edit_text.await_args.kwargs["reply_markup"].inline_keyboard
+            for button in row
+        ]
+        self.assertEqual([button.callback_data for button in buttons], [
+            "txt_action:translate:uz", "txt_action:translate:ru", "txt_action:translate:en",
+        ])
+
+    async def test_unified_transliteration_menu_has_auto_text_and_txt(self):
+        message = message_mock(text="🔤 Lotin ↔ Kiril")
+        await first.matn_olish(
+            SimpleNamespace(message=message, effective_user=SimpleNamespace(id=100)),
+            SimpleNamespace(user_data={}),
+        )
+        buttons = message.reply_text.await_args.kwargs["reply_markup"].inline_keyboard
+        self.assertEqual([row[0].callback_data for row in buttons], [
+            "translit_menu:text", "translit_menu:file",
+        ])
+
+    async def test_auto_transliteration_ignores_saved_forced_direction(self):
+        user = SimpleNamespace(id=100, username="test", first_name="Test")
+        message = message_mock(text="Salom")
+        context = SimpleNamespace(user_data={"selected_action": "transliterate_auto"})
+        async def run_operation(message, operation, **kwargs):
+            return operation()
+        with patch.object(first, "is_rate_limited", return_value=False), \
+             patch.object(first, "get_user_direction", return_value="cyrillic_to_latin"), \
+             patch.object(first, "transliteration_candidates", return_value=["Салом"]) as transliterate, \
+             patch.object(first, "run_with_countdown", side_effect=run_operation), \
+             patch.object(first, "send_copyable_text", new=AsyncMock()), \
+             patch.object(first, "open", mock_open(), create=True):
+            await first.matn_olish(SimpleNamespace(message=message, effective_user=user), context)
+        self.assertEqual(transliterate.call_args.args[1], "auto")
+
+    async def test_dictionary_button_opens_dictionary_actions(self):
+        message = message_mock(text="📚 Lug'at")
+        await first.matn_olish(
+            SimpleNamespace(message=message, effective_user=SimpleNamespace(id=100)),
+            SimpleNamespace(user_data={}),
+        )
+        self.assertEqual(
+            message.reply_text.await_args.kwargs["reply_markup"].keyboard,
+            first.dictionary_menu_markup().keyboard,
+        )
+
+    async def test_bot_publishes_short_user_and_admin_command_lists(self):
+        bot = SimpleNamespace(set_my_commands=AsyncMock())
+        await first.configure_bot_commands(SimpleNamespace(bot=bot))
+        self.assertEqual(bot.set_my_commands.await_count, 2)
+        public_call, admin_call = bot.set_my_commands.await_args_list
+        self.assertEqual([command.command for command in public_call.args[0]], ["start", "menu", "help"])
+        self.assertEqual([command.command for command in admin_call.args[0]], ["start", "menu", "help", "stats", "export"])
 
 
 class TxtFlowTests(unittest.IsolatedAsyncioTestCase):
@@ -212,7 +329,22 @@ class TranslationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(translator.translate.await_args_list[1].kwargs["src"], "en")
 
 
-class OcrTests(unittest.TestCase):
+class OcrTests(unittest.IsolatedAsyncioTestCase):
+    async def test_ocr_rate_limit_skips_download_and_processing(self):
+        document = SimpleNamespace(
+            mime_type="image/png", file_name="scan.png", file_size=100,
+            get_file=AsyncMock(),
+        )
+        message = message_mock(document=document, photo=None)
+        update = SimpleNamespace(
+            message=message, effective_user=SimpleNamespace(id=100),
+        )
+        with patch.object(first, "is_rate_limited", return_value=True), patch.object(first, "ocr_image") as ocr:
+            await first.ocr_command(update, SimpleNamespace(user_data={"selected_action": "image"}))
+        document.get_file.assert_not_awaited()
+        ocr.assert_not_called()
+        self.assertIn("bir daqiqadan", message.reply_text.await_args.args[0].casefold())
+
     def test_missing_uzbek_pack_falls_back_to_installed_english(self):
         image = io.BytesIO()
         Image.new("RGBA", (100, 50), "white").save(image, format="PNG")
