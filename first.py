@@ -7,7 +7,6 @@ import io
 import os
 import re
 import asyncio  # ✅ Qo‘shildi
-import subprocess  # ✅ Qo‘shildi: git auto push uchun
 import tempfile
 import uuid
 import time
@@ -21,6 +20,7 @@ from speech_recognition import RequestError, UnknownValueError
 from telegram.error import NetworkError, TelegramError, TimedOut
 
 # Qo‘shimcha imkoniyatlar va modullar
+from auto_git_sync import auto_commit_push_data
 from extra_features import translate_text, translation_chunk_count, ocr_image, speech_to_text
 from inline_handler import inlinequery
 from lang_support import LANGUAGES, get_lang, set_lang
@@ -235,12 +235,8 @@ RAMAZON_MESSAGE = (
 SENT_FLAGS_FILE = "data/sent_flags.json"
 RAMAZON_FLAG_KEY = "ramazon_broadcast_sent_v1"
 def git_auto_push():
-    try:
-        subprocess.run(["git", "add", "."], check=True)
-        subprocess.run(["git", "commit", "-m", "Auto update data"], check=True)
-        subprocess.run(["git", "push"], check=True)
-    except Exception as e:
-        logger.error(f"Git push xatolik: {e}")
+    if not auto_commit_push_data():
+        logger.info("Git auto push uchun yangi data o'zgarishi topilmadi yoki push bajarilmadi.")
 
 
 # Helper functions
@@ -276,6 +272,7 @@ def save_sent_flags(flags: dict):
     os.makedirs("data", exist_ok=True)
     with open(SENT_FLAGS_FILE, "w", encoding="utf-8") as f:
         json.dump(flags, f, indent=4, ensure_ascii=False)
+    git_auto_push()
 
 
 # ✅ Qo‘shildi: bot ishga tushganda hamma eski userlarga yuborish
@@ -444,6 +441,7 @@ async def matn_olish(update: Update, context: ContextTypes.DEFAULT_TYPE):
             with open('feedbacks.csv', 'a', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
                 writer.writerow([user_id, user_name, feedback_text, datetime.datetime.now().isoformat()])
+            git_auto_push()
             context.user_data.pop('awaiting_feedback', None)
             await update.message.reply_text("Fikringiz qabul qilindi. Rahmat!")
         except Exception as e:
@@ -517,6 +515,7 @@ async def matn_olish(update: Update, context: ContextTypes.DEFAULT_TYPE):
         with open('translations.csv', 'a', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow([user_id, kirilgan_matn, javob, datetime.datetime.now().isoformat()])
+        git_auto_push()
 
         # Monospaced format - HTML <pre>
         result_buttons = []

@@ -1,65 +1,16 @@
 """Atomic registration of user/chat metadata received from Telegram."""
 import json
 import os
-import shutil
-import subprocess
 import tempfile
 import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+from auto_git_sync import auto_commit_push_data
+
 USERS_FILE = Path(__file__).resolve().parent / "users.json"
-REPO_DIR = Path(__file__).resolve().parent
 _LOCK = threading.RLock()
-_GIT_LOCK = threading.Lock()
-
-
-def _find_git():
-    git = shutil.which("git")
-    if git:
-        return git
-    candidates = [
-        Path.home() / "AppData/Local/Programs/Git/cmd/git.exe",
-        Path.home() / "AppData/Local/Programs/Git/bin/git.exe",
-        Path("C:/Program Files/Git/cmd/git.exe"),
-        Path("C:/Program Files/Git/bin/git.exe"),
-    ]
-    for candidate in candidates:
-        if candidate.exists():
-            return str(candidate)
-    return None
-
-
-def _run_git(git, args):
-    return subprocess.run(
-        [git, *args],
-        cwd=REPO_DIR,
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=60,
-    )
-
-
-def _auto_commit_push_users():
-    git = _find_git()
-    if not git:
-        return
-    with _GIT_LOCK:
-        try:
-            add = _run_git(git, ["add", "-f", "users.json"])
-            if add.returncode != 0:
-                return
-            diff = _run_git(git, ["diff", "--cached", "--quiet", "--", "users.json"])
-            if diff.returncode == 0:
-                return
-            commit = _run_git(git, ["commit", "-m", "Auto update users", "--", "users.json"])
-            if commit.returncode != 0:
-                return
-            _run_git(git, ["push", "origin", "main"])
-        except (OSError, subprocess.SubprocessError):
-            return
 
 
 def _load_users():
@@ -92,7 +43,7 @@ def _save_users(data):
                 if attempt == 9:
                     raise
                 time.sleep(0.1)
-        _auto_commit_push_users()
+        auto_commit_push_data()
     finally:
         if temporary is not None and temporary.exists():
             temporary.unlink()
