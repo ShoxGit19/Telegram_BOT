@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 from telegram import BotCommand, BotCommandScopeChat, BotCommandScopeDefault, CopyTextButton, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, MessageEntity, Update
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, CommandHandler, InlineQueryHandler, MessageHandler, filters, ContextTypes
 from speech_recognition import RequestError, UnknownValueError
-from telegram.error import TelegramError
+from telegram.error import NetworkError, TelegramError, TimedOut
 
 # Qo‘shimcha imkoniyatlar va modullar
 from extra_features import translate_text, translation_chunk_count, ocr_image, speech_to_text
@@ -118,7 +118,18 @@ def dictionary_menu_markup():
 async def show_main_menu(message, text="Kerakli amalni tanlang:"):
     sender = getattr(message, "from_user", None)
     is_admin = bool(sender and sender.id == ADMIN_ID)
-    await message.reply_text(text, reply_markup=main_menu_markup(is_admin))
+    await reply_text_with_retry(message, text, reply_markup=main_menu_markup(is_admin))
+
+
+async def reply_text_with_retry(message, text, retries=2, retry_delay=1, **kwargs):
+    for attempt in range(retries + 1):
+        try:
+            return await message.reply_text(text, **kwargs)
+        except (TimedOut, NetworkError):
+            if attempt >= retries:
+                logger.warning("Telegramga xabar yuborib bo'lmadi: timeout", exc_info=True)
+                return None
+            await asyncio.sleep(retry_delay * (attempt + 1))
 
 
 def clear_pending_actions(user_data):
@@ -205,6 +216,12 @@ START_MESSAGE = (
 )
 
 # ✅ Qo‘shildi: Ramazon broadcast xabari (HTML)
+FEEDBACK_PROMPT = (
+    "Fikr yoki taklifingizni keyingi xabarda yozing.\n\n"
+    "Botdan foydalanish sizga yanada qulay bo'lishi uchun qanday yangi qo'shimcha "
+    "imkoniyatlar qo'shishimizni xohlaysiz?"
+)
+
 RAMAZON_MESSAGE = (
     "🌙 <b>Ramazon muborak!</b>\n\n"
     "Ramazoningiz barakali o‘tsin. 🤲\n"
@@ -354,7 +371,7 @@ async def matn_olish(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if action == "feedback":
             context.user_data.pop("selected_action", None)
             context.user_data["awaiting_feedback"] = True
-            await update.message.reply_text("Fikr yoki taklifingizni keyingi xabarda yozing.", reply_markup=main_menu_markup(user.id == ADMIN_ID))
+            await update.message.reply_text(FEEDBACK_PROMPT, reply_markup=main_menu_markup(user.id == ADMIN_ID))
             return
         if action == "dictionary_list":
             context.user_data.pop("selected_action", None)
@@ -1230,7 +1247,7 @@ async def history(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def feedback_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     clear_pending_actions(context.user_data)
     context.user_data['awaiting_feedback'] = True
-    await update.message.reply_text("Iltimos, fikringizni yozing. Yozganingiz keyingi xabarda saqlanadi.")
+    await update.message.reply_text(FEEDBACK_PROMPT)
 
 async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
@@ -1291,12 +1308,37 @@ async def configure_bot_commands(application):
         logger.warning("Telegram buyruqlar ro'yxatini yangilab bo'lmadi", exc_info=True)
 
 
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
+    error = context.error
+    if isinstance(error, TimedOut):
+        logger.warning("Telegram API timeout berdi. Internet yoki Telegram ulanishini tekshiring.")
+        return
+    if isinstance(error, NetworkError):
+        logger.warning("Telegram tarmoq xatosi: %s", error)
+        return
+    if error:
+        logger.error(
+            "Update ishlashida kutilmagan xatolik",
+            exc_info=(type(error), error, error.__traceback__),
+        )
+
+
 def build_application(token=None):
     load_dotenv(Path(__file__).resolve().parent / ".env")
     token = token or os.getenv("BOT_TOKEN")
     if not token:
         raise RuntimeError("BOT_TOKEN .env faylida sozlanmagan")
-    app = ApplicationBuilder().token(token).post_init(configure_bot_commands).build()
+    app = (
+        ApplicationBuilder()
+        .token(token)
+        .post_init(configure_bot_commands)
+        .connect_timeout(30)
+        .read_timeout(30)
+        .write_timeout(30)
+        .pool_timeout(30)
+        .build()
+    )
+    app.add_error_handler(error_handler)
     # Commandlar
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("menu", menu_command))
